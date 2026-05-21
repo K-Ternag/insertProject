@@ -388,6 +388,10 @@ def extract_non_empty_new_records(output: Dict[str, Any]) -> Dict[str, List[Dict
     return new_records_by_folder
 
 
+def tempfunc(json_file: Dict[str, Any]) -> None:
+    print(json.dumps(json_file, ensure_ascii=False, indent=2))
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Track incremental workflow_records.json updates.")
     parser.add_argument(
@@ -464,7 +468,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             )
             new_records_by_folder = extract_non_empty_new_records(output)
             if new_records_by_folder:
-                print(json.dumps(new_records_by_folder, ensure_ascii=False, indent=2))
+                tempfunc(new_records_by_folder)
         else:
             iteration = 0
             while True:
@@ -477,7 +481,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                     )
                     new_records_by_folder = extract_non_empty_new_records(output)
                     if new_records_by_folder:
-                        print(json.dumps(new_records_by_folder, ensure_ascii=False, indent=2))
+                        tempfunc(new_records_by_folder)
                 except LockUnavailableError as exc:
                     append_error_log(
                         args.error_log_file,

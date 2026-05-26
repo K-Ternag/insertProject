@@ -40,6 +40,8 @@ class LockUnavailableError(WorkflowRecordsError):
 class FolderSnapshot:
     folder: str
     file_path: Path
+    search_terms: List[str]
+    filter_terms: List[str]
     records: List[Dict[str, Any]]
     top_record_key: Optional[str]
 
@@ -124,11 +126,19 @@ def discover_snapshots(outputs_root: Path) -> List[FolderSnapshot]:
             continue
         payload = read_json_with_retry(file_path)
         records = extract_records(payload, file_path)
+        search_terms = payload.get("search_terms", [])
+        filter_terms = payload.get("filter_terms", [])
+        if not isinstance(search_terms, list):
+            search_terms = []
+        if not isinstance(filter_terms, list):
+            filter_terms = []
         top_record_key = record_checkpoint_value(records[0]) if records else None
         snapshots.append(
             FolderSnapshot(
                 folder=folder_path.name,
                 file_path=file_path,
+                search_terms=search_terms,
+                filter_terms=filter_terms,
                 records=records,
                 top_record_key=top_record_key,
             )
@@ -308,6 +318,8 @@ class WorkflowRecordTracker:
                     "new_count": len(new_records),
                     "checkpoint_key": snapshot.top_record_key,
                     "initialized": True,
+                    "search_terms": snapshot.search_terms,
+                    "filter_terms": snapshot.filter_terms,
                 }
                 continue
 
@@ -324,6 +336,8 @@ class WorkflowRecordTracker:
                 "new_count": len(new_records),
                 "checkpoint_key": snapshot.top_record_key,
                 "initialized": checkpoint_key is not None,
+                "search_terms": snapshot.search_terms,
+                "filter_terms": snapshot.filter_terms,
             }
 
             append_checkpoint_history_log(
@@ -373,18 +387,22 @@ def run_once(
         release_lock(lock_handle)
 
 
-def extract_non_empty_new_records(output: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
+def extract_non_empty_new_records(output: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
     folders = output.get("folders", {})
     if not isinstance(folders, dict):
         return {}
 
-    new_records_by_folder: Dict[str, List[Dict[str, Any]]] = {}
+    new_records_by_folder: Dict[str, Dict[str, Any]] = {}
     for folder, folder_output in folders.items():
         if not isinstance(folder_output, dict):
             continue
         new_records = folder_output.get("new_records", [])
         if isinstance(new_records, list) and new_records:
-            new_records_by_folder[folder] = new_records
+            new_records_by_folder[folder] = {
+                "search_terms": folder_output.get("search_terms", []),
+                "filter_terms": folder_output.get("filter_terms", []),
+                "new_records": new_records,
+            }
     return new_records_by_folder
 
 

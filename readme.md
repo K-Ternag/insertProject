@@ -31,7 +31,30 @@ python D:\CompPjts\insertFiles\workflow_records_tracker.py --loop --interval-sec
 - state에 없던 새 폴더가 처음 발견되면 해당 시점의 `records`를 출력하고 checkpoint를 저장합니다.
 - 각 실행마다 `workflow_records_checkpoint_history.log`에 이전값/새값을 append-only로 남깁니다. 값이 같으면 `checkpoint_unchanged`, 다르면 `checkpoint_changed`로 남깁니다.
 - state에 실제로 저장된 값은 `state_persisted`로 한 번 더 남깁니다.
-- `new_records`가 있으면 폴더별로 `print`합니다.
+- `new_records`가 있으면 폴더별로 `search_terms`, `filter_terms`, `new_records`를 함께 `print`합니다.
+- `tempfunc` 입력 형태는 아래와 같습니다.
+
+```json
+{
+  "naver_news": {
+    "search_terms": ["프랑스", "독일"],
+    "filter_terms": ["프랑스"],
+    "new_records": [
+      {
+        "record_key": "term001_item001",
+        "success": true,
+        "extracts": {},
+        "downloaded_files": [],
+        "extracted_files": [],
+        "error": null,
+        "start_url": "https://openapi.naver.com/v1/search/news.json?query=...",
+        "final_url": "https://n.news.naver.com/...",
+        "output_file": "outputs\\naver_news\\filter\\..."
+      }
+    ]
+  }
+}
+```
 - 중복 실행은 `workflow_records_tracker.lock` 파일 잠금으로 막습니다.
 
 ## 주요 옵션
